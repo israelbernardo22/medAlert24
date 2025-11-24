@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Medication, HistoryEntry, Profile, Dose } from './types';
-import { useStore } from './hooks/useMedicationStore';
-import { useAlerts } from './hooks/useAlerts';
-import Header from './components/Header';
-import MedicationDashboard from './components/MedicationDashboard';
-import MedicationForm from './components/MedicationForm';
-import HistoryView from './components/HistoryView';
-import AlertModal from './components/AlertModal';
-import { PlusIcon, UserIcon, PillIcon, ChevronRightIcon, ArrowLeftIcon, LogoutIcon, TrashIcon } from './components/Icons';
+import { Medication, HistoryEntry, Profile, Dose } from './PRD/types';
+import { useStore } from './PRD/hooks/useMedicationStore';
+import { useAlerts } from './PRD/hooks/useAlerts';
+import Header from './PRD/components/Header';
+import MedicationDashboard from './PRD/components/MedicationDashboard';
+import MedicationForm from './PRD/components/MedicationForm';
+import HistoryView from './PRD/components/HistoryView';
+import AlertModal from './PRD/components/AlertModal';
+import { PlusIcon, UserIcon, PillIcon, ChevronRightIcon, ArrowLeftIcon, LogoutIcon, TrashIcon } from './PRD/components/Icons';
 
 // --- Reusable Button ---
 const ActionButton: React.FC<{ onClick: () => void; children: React.ReactNode; primary?: boolean }> = ({ onClick, children, primary }) => (

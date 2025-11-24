@@ -105,25 +105,13 @@ medAlert24/
 - ✅ Dados armazenados localmente no navegador
 - ✅ Histórico completo de todas as medicações
 
-## Contribuindo
-
-Contribuições são bem-vindas! Sinta-se à vontade para:
-- Reportar bugs
-- Sugerir novas funcionalidades
-- Submeter pull requests
-
 ## Autores
 
-- **Israel Bernardo** - Desenvolvimento Principal
-- **Marcos Rafael** - Desenvolvimento Principal
-
-## Licença
-
-Este projeto está disponível sob licença MIT.
-
-## Suporte
-
-Para dúvidas ou problemas, abra uma issue no repositório GitHub.
+- **Israel Bernardo de Assis Silva RA:325130743** - Desenvolvimento Principal
+- **Pedro Henrique Soares RA:323220287** - Desenvolvimento Principal
+- **Marcos Vinicius Gonçalves RA:323220450** - Desenvolvimento Principal
+- **Rafael Cangussú Moreira RA:32321034** - Desenvolvimento Principal
+- ** Pedro Rodrigues Pezzini RA:325131349** - Desenvolvimento Principal
 
 ---
 
