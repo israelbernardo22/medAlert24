@@ -1,9 +1,5 @@
 # MedAlert24 - Seu Aliado no Controle de Medicamentos
 
-<div align="center">
-<img width="1200" height="475" alt="MedAlert24" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 ## Sobre a Aplicação
 
 **MedAlert24** é uma aplicação web inteligente e intuitiva designed para ajudar no gerenciamento de medicamentos para você e sua família. Com um foco em segurança e facilidade de uso, a aplicação oferece lembretes de horários de medicação, histórico de dosagens e gerenciamento de múltiplos perfis para atender toda a família.
