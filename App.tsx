@@ -7,7 +7,7 @@ import MedicationDashboard from './components/MedicationDashboard';
 import MedicationForm from './components/MedicationForm';
 import HistoryView from './components/HistoryView';
 import AlertModal from './components/AlertModal';
-import { PlusIcon, UserIcon, PillIcon, ChevronRightIcon, ArrowLeftIcon, LogoutIcon } from './components/Icons';
+import { PlusIcon, UserIcon, PillIcon, ChevronRightIcon, ArrowLeftIcon, LogoutIcon, TrashIcon } from './components/Icons';
 
 // --- Reusable Button ---
 const ActionButton: React.FC<{ onClick: () => void; children: React.ReactNode; primary?: boolean }> = ({ onClick, children, primary }) => (
@@ -115,7 +115,18 @@ const ProfileScreen: React.FC<{
   onSelectProfile: (profileId: string) => void;
   onAddProfile: () => void;
   onLogout: () => void;
-}> = ({ profiles, medications, onSelectProfile, onAddProfile, onLogout }) => (
+  onDeleteProfile?: (profileId: string) => void;
+}> = ({ profiles, medications, onSelectProfile, onAddProfile, onLogout, onDeleteProfile }) => {
+  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+
+  const handleDeleteProfile = (profileId: string) => {
+    if (onDeleteProfile) {
+      onDeleteProfile(profileId);
+      setProfileToDelete(null);
+    }
+  };
+
+  return (
   <div className="min-h-screen bg-slate-50">
      <header className="bg-white p-4 sticky top-0 z-10 shadow-sm flex justify-between items-center">
         <h1 className="text-xl font-bold text-slate-800">Perfis</h1>
@@ -128,8 +139,8 @@ const ProfileScreen: React.FC<{
       {profiles.map(p => {
         const medCount = medications.filter(m => m.profileId === p.id).length;
         return (
-          <button key={p.id} onClick={() => onSelectProfile(p.id)} className="w-full bg-white rounded-xl shadow-sm p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-all">
-            <div className="flex items-center space-x-4">
+          <div key={p.id} className="flex items-center justify-between bg-white rounded-xl shadow-sm p-4 hover:bg-slate-50 transition-all">
+            <button onClick={() => onSelectProfile(p.id)} className="flex-grow text-left flex items-center space-x-4">
               <div className="bg-slate-100 p-3 rounded-full">
                 <UserIcon className="w-6 h-6 text-slate-500" />
               </div>
@@ -138,9 +149,17 @@ const ProfileScreen: React.FC<{
                 <p className="text-sm text-slate-500">{p.relation}</p>
                 <p className="text-sm text-blue-600">{medCount} medicamentos</p>
               </div>
-            </div>
-            <ChevronRightIcon className="w-5 h-5 text-slate-400" />
-          </button>
+            </button>
+            {profiles.length > 1 && (
+              <button 
+                onClick={() => setProfileToDelete(p.id)}
+                className="ml-2 p-2 rounded-full hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors"
+                title="Excluir perfil"
+              >
+                <TrashIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         );
       })}
        <button onClick={onAddProfile} className="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:bg-slate-100 transition-all">
@@ -148,8 +167,24 @@ const ProfileScreen: React.FC<{
       </button>
        <p className="text-sm text-slate-500 text-center px-4 pt-2">Cada perfil tem sua própria agenda de medicamentos e histórico</p>
     </main>
+
+    {profileToDelete && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+          <h3 className="text-lg font-bold text-slate-800">Excluir Perfil?</h3>
+          <p className="mt-2 text-sm text-slate-600">
+            Tem certeza que deseja excluir este perfil? Todos os medicamentos e histórico associados serão removidos. Esta ação não pode ser desfeita.
+          </p>
+          <div className="mt-6 flex justify-end space-x-3">
+            <button onClick={() => setProfileToDelete(null)} className="bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button onClick={() => handleDeleteProfile(profileToDelete)} className="bg-red-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-red-700">Excluir</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
-);
+  );
+};
 
 const AddProfileModal: React.FC<{ onClose: () => void, onSave: (name: string, relation: string) => void }> = ({ onClose, onSave }) => {
     const [name, setName] = useState('');
@@ -185,7 +220,7 @@ type AuthView = 'login' | 'register' | 'forgotPassword';
 
 const App: React.FC = () => {
   // Global Store
-  const { profiles, medications, history, addMedication, updateMedication, deleteMedication, recordDosage, addProfile } = useStore();
+  const { profiles, medications, history, addMedication, updateMedication, deleteMedication, recordDosage, addProfile, deleteProfile } = useStore();
   
   // App State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -331,7 +366,7 @@ const App: React.FC = () => {
       case 'history':
         return <HistoryView history={profileHistory} />;
       case 'profiles':
-         return <ProfileScreen profiles={profiles} medications={medications} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} />;
+         return <ProfileScreen profiles={profiles} medications={medications} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} onDeleteProfile={deleteProfile} />;
       case 'dashboard':
       default:
         return <MedicationDashboard todaysDoses={todaysDoses} onTakeDose={handleTakeDose} />;
@@ -352,9 +387,9 @@ const App: React.FC = () => {
       // Não há função direta para limpar medicamentos, mas podemos simular removendo todos os medicamentos do store
       // O ideal seria ter uma função para resetar o store, mas aqui só mostramos o perfil
       setFirstLogin(false);
-      content = <ProfileScreen profiles={profiles} medications={[]} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} />;
+      content = <ProfileScreen profiles={profiles} medications={[]} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} onDeleteProfile={deleteProfile} />;
     } else {
-      content = <ProfileScreen profiles={profiles} medications={medications} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} />;
+      content = <ProfileScreen profiles={profiles} medications={medications} onSelectProfile={handleSelectProfile} onAddProfile={() => setIsAddingProfile(true)} onLogout={handleLogout} onDeleteProfile={deleteProfile} />;
     }
   } else {
     content = (

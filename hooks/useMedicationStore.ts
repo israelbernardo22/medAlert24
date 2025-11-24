@@ -86,6 +86,13 @@ class MedicationStore {
     const newHistory = data.history.filter(entry => entry.medication.id !== id);
     return { ...data, medications: newMeds, history: newHistory };
   }
+
+  deleteProfile(data: AppData, profileId: string) {
+    const newProfiles = data.profiles.filter(profile => profile.id !== profileId);
+    const newMeds = data.medications.filter(med => med.profileId !== profileId);
+    const newHistory = data.history.filter(entry => entry.profileId !== profileId);
+    return { ...data, profiles: newProfiles, medications: newMeds, history: newHistory };
+  }
 }
 
 const medicationStore = new MedicationStore();
@@ -157,5 +164,9 @@ export const useStore = () => {
     setData(prev => ({ ...prev, profiles: [...prev.profiles, newProfile] }));
   }, []);
 
-  return { ...data, addMedication, updateMedication, deleteMedication, recordDosage, addProfile };
+  const deleteProfile = useCallback((profileId: string) => {
+    setData(prev => medicationStore.deleteProfile(prev, profileId));
+  }, []);
+
+  return { ...data, addMedication, updateMedication, deleteMedication, recordDosage, addProfile, deleteProfile };
 };
