@@ -4,8 +4,6 @@
 
 **MedAlert24** é uma aplicação web inteligente e intuitiva designed para ajudar no gerenciamento de medicamentos para você e sua família. Com um foco em segurança e facilidade de uso, a aplicação oferece lembretes de horários de medicação, histórico de dosagens e gerenciamento de múltiplos perfis para atender toda a família.
 
-A aplicação utiliza inteligência artificial (Google Gemini) para fornecer informações sobre medicamentos e ajudar na melhor compreensão dos tratamentos.
-
 ## Público-Alvo
 
 - **Pacientes crônicos** que precisam tomar medicamentos regularmente
@@ -21,7 +19,6 @@ A aplicação utiliza inteligência artificial (Google Gemini) para fornecer inf
 ✅ **Histórico de Dosagens** - Acompanhe o histórico completo de medicações tomadas  
 ✅ **Suporte a Múltiplos Horários** - Configure vários horários por dia para cada medicamento  
 ✅ **Tratamentos com Duração** - Defina medicamentos contínuos ou com duração específica em dias  
-✅ **Inteligência Artificial** - Informações automáticas sobre medicamentos via Google Gemini  
 ✅ **Interface Responsiva** - Funciona perfeitamente em dispositivos móveis e desktop  
 
 ## Como Usar
@@ -29,7 +26,6 @@ A aplicação utiliza inteligência artificial (Google Gemini) para fornecer inf
 ### Pré-requisitos
 
 - Node.js 16 ou superior
-- Uma chave de API do Google Gemini
 
 ### Instalação e Execução Local
 
@@ -44,14 +40,7 @@ A aplicação utiliza inteligência artificial (Google Gemini) para fornecer inf
    npm install
    ```
 
-3. **Configure a chave de API:**
-   - Crie um arquivo `.env.local` na raiz do projeto
-   - Adicione sua chave de API do Google Gemini:
-     ```
-     GEMINI_API_KEY=sua_chave_aqui
-     ```
-
-4. **Inicie a aplicação em modo desenvolvimento:**
+3. **Inicie a aplicação em modo desenvolvimento:**
    ```bash
    npm run dev
    ```
@@ -70,7 +59,6 @@ npm run preview
 - **Linguagem**: TypeScript
 - **Bundler**: Vite
 - **Styling**: Tailwind CSS
-- **IA**: Google Gemini API (@google/genai)
 - **Estado**: React Hooks (Context/Custom Hooks)
 - **Armazenamento**: localStorage
 
@@ -89,8 +77,6 @@ medAlert24/
 ├── hooks/                # Custom React Hooks
 │   ├── useAlerts.ts
 │   └── useMedicationStore.ts
-├── services/             # Serviços externos
-│   └── geminiService.ts
 ├── types.ts              # Definições de tipos TypeScript
 ├── App.tsx               # Componente principal
 ├── vite.config.ts        # Configuração do Vite
@@ -111,7 +97,7 @@ medAlert24/
 - **Pedro Henrique Soares RA:323220287** - Desenvolvimento Principal
 - **Marcos Vinicius Gonçalves RA:323220450** - Desenvolvimento Principal
 - **Rafael Cangussú Moreira RA:32321034** - Desenvolvimento Principal
-- ** Pedro Rodrigues Pezzini RA:325131349** - Desenvolvimento Principal
+- **Pedro Rodrigues Pezzini RA:325131349** - Desenvolvimento Principal
 
 ---
 

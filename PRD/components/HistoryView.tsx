@@ -1,31 +1,34 @@
-
 import React, { useMemo } from 'react';
-import { HistoryEntry } from '../types';
-import { CalendarIcon } from './Icons';
+import { HistoryEntry, Medication } from '../types';
+import { CalendarIcon, PillIcon } from './Icons';
 
 const HistoryStatus: React.FC<{status: HistoryEntry['status']}> = ({ status }) => {
     const baseClasses = "text-xs font-semibold px-3 py-1 rounded-full";
     switch (status) {
         case 'taken':
             return <span className={`${baseClasses} bg-green-100 text-green-700`}>Tomada</span>;
-        case 'postponed':
-            return <span className={`${baseClasses} bg-yellow-100 text-yellow-700`}>Adiada</span>;
-        case 'skipped':
+        // Adicione outros casos se necessário, como 'postponed' ou 'skipped'
         default:
             return <span className={`${baseClasses} bg-red-100 text-red-700`}>Não tomada</span>;
     }
 }
 
-const HistoryItem: React.FC<{ entry: HistoryEntry }> = ({ entry }) => {
-  const entryDate = new Date(entry.timestamp);
+// CORREÇÃO: O componente agora recebe o medicamento como uma prop separada e segura.
+const HistoryItem: React.FC<{ entry: HistoryEntry; medication: Medication }> = ({ entry, medication }) => {
+  // Usa `entry.date` em vez de `timestamp` que não existe no tipo.
+  const entryDate = new Date(entry.date);
   
   const getDayLabel = (date: Date) => {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
     
-    if (date.toDateString() === today.toDateString()) return 'Hoje';
-    if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
+    today.setHours(0,0,0,0);
+    yesterday.setHours(0,0,0,0);
+    date.setHours(0,0,0,0);
+
+    if (date.getTime() === today.getTime()) return 'Hoje';
+    if (date.getTime() === yesterday.getTime()) return 'Ontem';
     return date.toLocaleDateString('pt-BR', { weekday: 'long' });
   }
 
@@ -33,10 +36,11 @@ const HistoryItem: React.FC<{ entry: HistoryEntry }> = ({ entry }) => {
      <div className="bg-white rounded-xl shadow-sm overflow-hidden w-full">
       <div className="p-4 flex items-center justify-between">
         <div>
-            <h3 className="text-lg font-bold text-slate-800">{entry.medication.name}</h3>
-            <p className="text-slate-500">{entry.medication.dosage}</p>
+            {/* CORREÇÃO: Acessa o nome e a dosagem do medicamento de forma segura. */}
+            <h3 className="text-lg font-bold text-slate-800">{medication.name}</h3>
+            <p className="text-slate-500">{medication.dosage}</p>
             <p className="text-sm text-slate-400 mt-1">
-                {getDayLabel(entryDate)} - {entryDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                {getDayLabel(entryDate)} - {entry.time}
             </p>
         </div>
         <HistoryStatus status={entry.status} />
@@ -45,13 +49,19 @@ const HistoryItem: React.FC<{ entry: HistoryEntry }> = ({ entry }) => {
   );
 };
 
-const HistoryView: React.FC<{history: HistoryEntry[]}> = ({ history }) => {
+// CORREÇÃO: O componente agora aceita `medications` para fazer a busca segura.
+const HistoryView: React.FC<{history: HistoryEntry[], medications: Medication[]}> = ({ history, medications }) => {
+  
+  const sortedHistory = useMemo(() => {
+      return [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [history]);
+
   if (history.length === 0) {
     return (
        <div className="text-center py-16 px-6 bg-white rounded-lg shadow-sm">
             <CalendarIcon className="w-12 h-12 mx-auto text-slate-300"/>
             <h3 className="mt-2 text-lg font-medium text-slate-800">Nenhum Histórico</h3>
-            <p className="mt-1 text-sm text-slate-500">Doses tomadas e puladas aparecerão aqui.</p>
+            <p className="mt-1 text-sm text-slate-500">Doses tomadas e não tomadas aparecerão aqui.</p>
         </div>
     );
   }
@@ -59,12 +69,18 @@ const HistoryView: React.FC<{history: HistoryEntry[]}> = ({ history }) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center px-1">
-          <p className="text-sm font-medium text-slate-500">Últimos 7 dias</p>
-          {/* Filter icon can be added here */}
+          <p className="text-sm font-medium text-slate-500">Eventos Recentes</p>
       </div>
-      {history.map(entry => (
-        <HistoryItem key={entry.id} entry={entry} />
-      ))}
+      {sortedHistory.map(entry => {
+        // CORREÇÃO: Procura o medicamento para cada entrada do histórico.
+        const medication = medications.find(m => m.id === entry.medicationId);
+        // Se o medicamento não for encontrado (foi deletado), simplesmente não renderiza o item.
+        if (!medication) {
+          return null;
+        }
+        // Se encontrou, renderiza o item passando o medicamento de forma segura.
+        return <HistoryItem key={entry.id} entry={entry} medication={medication} />;
+      })}
     </div>
   );
 };

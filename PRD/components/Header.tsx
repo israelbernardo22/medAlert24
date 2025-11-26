@@ -1,59 +1,51 @@
-
 import React from 'react';
-import { UserIcon, HistoryIcon, ArrowLeftIcon, ClockIcon } from './Icons';
+import { PillIcon, HistoryIcon, ArrowLeftIcon } from './Icons';
 
-type View = 'dashboard' | 'add' | 'edit' | 'history' | 'profiles';
+type View = 'dashboard' | 'add' | 'edit' | 'history';
 
 interface HeaderProps {
+  title: string;
+  profileName?: string; 
+  showBackArrow: boolean; 
+  onBack: () => void;
+  
   currentView: View;
   onNavigate: (view: View) => void;
-  onBack: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onBack }) => {
-  
-  const getTitle = () => {
-    switch (currentView) {
-      case 'add': return 'Novo Medicamento';
-      case 'edit': return 'Editar Medicamento';
-      case 'history': return 'Histórico';
-      case 'profiles': return 'Perfis';
-      default: return 'MedAlert';
-    }
-  };
-
+const Header: React.FC<HeaderProps> = ({ title, profileName, showBackArrow, onBack, currentView, onNavigate }) => {
   const isDashboard = currentView === 'dashboard';
-  const isSubPage = ['add', 'edit', 'history', 'profiles'].includes(currentView);
+  const isHistory = currentView === 'history';
+
+  // O título principal é o nome do perfil no dashboard, ou o título da tela atual.
+  const finalTitle = currentView === 'dashboard' ? (profileName || title) : title;
 
   return (
-    <header className="bg-white sticky top-0 z-10 shadow-sm">
-      <div className="max-w-md mx-auto p-4">
-        {isDashboard && (
-          <div className="flex justify-between items-center">
-             <div className="flex items-center space-x-2">
-                <div className="bg-blue-500 text-white p-2 rounded-full">
-                    <ClockIcon className="w-6 h-6"/>
+    <header className="bg-white p-4 sticky top-0 z-10 shadow-sm flex-shrink-0">
+      <div className="flex items-center justify-between">
+        <div className="w-14">
+          {showBackArrow && (
+            <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-100 text-slate-600">
+              <ArrowLeftIcon className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+        
+        <h1 className="text-lg font-bold text-slate-800 truncate px-2 text-center">{finalTitle}</h1>
+
+        <div className="w-14 flex items-center justify-end">
+            {/* Mostra os ícones de navegação apenas se estivermos em um perfil */}
+            {profileName && (
+                <div className="flex items-center bg-slate-100 rounded-full">
+                    <button onClick={() => onNavigate('dashboard')} title="Painel" className={`p-2 rounded-full text-sm ${isDashboard ? "text-blue-600" : "text-slate-500"}`}>
+                        <PillIcon className="w-5 h-5" />
+                    </button>
+                    <button onClick={() => onNavigate('history')} title="Histórico" className={`p-2 rounded-full text-sm ${isHistory ? "text-blue-600" : "text-slate-500"}`}>
+                        <HistoryIcon className="w-5 h-5" />
+                    </button>
                 </div>
-                <h1 className="text-2xl font-bold text-slate-800">{getTitle()}</h1>
-             </div>
-             <div className="flex items-center space-x-2">
-                <button onClick={() => onNavigate('profiles')} className="p-2 rounded-full hover:bg-slate-100 text-slate-600">
-                    <UserIcon className="w-6 h-6"/>
-                </button>
-                 <button onClick={() => onNavigate('history')} className="p-2 rounded-full hover:bg-slate-100 text-slate-600">
-                    <HistoryIcon className="w-6 h-6"/>
-                </button>
-             </div>
-          </div>
-        )}
-        {isSubPage && (
-            <div className="flex items-center space-x-4">
-                <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-100 text-slate-600">
-                    <ArrowLeftIcon className="w-6 h-6" />
-                </button>
-                <h1 className="text-xl font-bold text-slate-800">{getTitle()}</h1>
-            </div>
-        )}
+            )}
+        </div>
       </div>
     </header>
   );

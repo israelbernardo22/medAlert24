@@ -1,172 +1,109 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Medication as MedicationType, HistoryEntry, Profile } from '../types';
+import { useState, useEffect } from 'react';
+import { Medication, HistoryEntry, Profile } from '../types';
 
-
-// Classe Medication
-export class Medication {
-  id: string;
-  profileId: string;
-  name: string;
-  dosage: string;
-  schedule: { type: 'daily'; times: string[] };
-  startDate: string;
-  duration: 'continuous' | number;
-
-  constructor(data: Omit<MedicationType, 'id'>) {
-    this.id = `med-${Date.now()}`;
-    this.profileId = data.profileId;
-    this.name = data.name;
-    this.dosage = data.dosage;
-    this.schedule = data.schedule;
-    this.startDate = data.startDate;
-    this.duration = data.duration;
-  }
-
-  isContinuous() {
-    return this.duration === 'continuous';
-  }
-
-  getEndDate(): string | null {
-    if (typeof this.duration === 'number') {
-      const start = new Date(this.startDate);
-      start.setDate(start.getDate() + this.duration - 1);
-      return start.toISOString().split('T')[0];
-    }
-    return null;
-  }
-}
-
-// Classe MedicationStore
-class MedicationStore {
-  private storageKey = 'medalert-data';
-
-  save(data: AppData) {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
-  }
-
-  load(): AppData {
-    try {
-      const storedData = localStorage.getItem(this.storageKey);
-      if (storedData) {
-        const parsed = JSON.parse(storedData);
-        if (parsed.profiles && parsed.medications && parsed.history) {
-          return parsed;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-    }
-    return {
-      profiles: initialProfiles,
-      medications: initialMedications,
-      history: [{
-        id: 'hist-1',
-        profileId: 'user-1',
-        medication: { id: 'med-1', name: 'Losartana', dosage: '50mg' },
-        status: 'taken',
-        timestamp: new Date().toISOString(),
-        scheduledTime: '08:00',
-      }],
-    };
-  }
-
-  addMedication(data: AppData, med: Medication) {
-    return { ...data, medications: [...data.medications, med] };
-  }
-
-  updateMedication(data: AppData, updatedMed: MedicationType) {
-    return {
-      ...data,
-      medications: data.medications.map(med => med.id === updatedMed.id ? updatedMed : med)
-    };
-  }
-
-  deleteMedication(data: AppData, id: string) {
-    const newMeds = data.medications.filter(med => med.id !== id);
-    const newHistory = data.history.filter(entry => entry.medication.id !== id);
-    return { ...data, medications: newMeds, history: newHistory };
-  }
-
-  deleteProfile(data: AppData, profileId: string) {
-    const newProfiles = data.profiles.filter(profile => profile.id !== profileId);
-    const newMeds = data.medications.filter(med => med.profileId !== profileId);
-    const newHistory = data.history.filter(entry => entry.profileId !== profileId);
-    return { ...data, profiles: newProfiles, medications: newMeds, history: newHistory };
-  }
-}
-
-const medicationStore = new MedicationStore();
-
-
-const getTodayDateString = () => new Date().toISOString().split('T')[0];
-
+// =========================================================================
+// DADOS INICIAIS MOCK (PARA DESENVOLVIMENTO)
+// =========================================================================
 const initialProfiles: Profile[] = [
-  { id: 'user-1', name: 'Você', relation: 'Titular' },
-  { id: 'user-2', name: 'Maria Silva', relation: 'Mãe' },
-  { id: 'user-3', name: 'João Silva', relation: 'Pai' },
+  { id: 1, name: 'Vovó Ana', relation: 'Avó' },
+  { id: 2, name: 'João', relation: 'Titular' },
 ];
 
-const initialMedications: MedicationType[] = [
-  { id: 'med-1', profileId: 'user-1', name: 'Losartana', dosage: '50mg', schedule: { type: 'daily', times: ['08:00'] }, startDate: getTodayDateString(), duration: 'continuous' },
-  { id: 'med-2', profileId: 'user-1', name: 'Metformina', dosage: '850mg', schedule: { type: 'daily', times: ['12:00'] }, startDate: getTodayDateString(), duration: 'continuous' },
-  { id: 'med-3', profileId: 'user-1', name: 'Omeprazol', dosage: '20mg', schedule: { type: 'daily', times: ['14:00'] }, startDate: getTodayDateString(), duration: 30 },
-  { id: 'med-4', profileId: 'user-1', name: 'Sinvastatina', dosage: '40mg', schedule: { type: 'daily', times: ['20:00'] }, startDate: getTodayDateString(), duration: 'continuous' },
-  { id: 'med-5', profileId: 'user-2', name: 'Atenolol', dosage: '25mg', schedule: { type: 'daily', times: ['09:00', '21:00'] }, startDate: getTodayDateString(), duration: 'continuous' },
-  { id: 'med-6', profileId: 'user-3', name: 'Clopidogrel', dosage: '75mg', schedule: { type: 'daily', times: ['10:00'] }, startDate: getTodayDateString(), duration: 90 },
+const initialMedications: Medication[] = [
+  { 
+    id: 1, 
+    profileId: 1,
+    name: 'Losartana', 
+    dosage: '50mg', 
+    schedule: { type: 'every_day', times: ['08:00', '20:00'] },
+    duration: { type: 'continuous', value: 0 },
+    startDate: '2024-01-01',
+    notes: 'Tomar com um copo de água.', 
+    history: [],
+    doses: ['08:00', '20:00'], // Manter por compatibilidade temporária
+  },
+  { 
+    id: 2, 
+    profileId: 1,
+    name: 'Paracetamol', 
+    dosage: '750mg', 
+    schedule: { type: 'specific_days', days: ['monday', 'wednesday', 'friday'], times: ['10:00'] },
+    duration: { type: 'days', value: 10 },
+    startDate: '2024-05-20',
+    notes: 'Apenas se sentir dor.', 
+    history: [],
+    doses: ['10:00'], // Manter por compatibilidade temporária
+  },
 ];
 
+const initialHistory: HistoryEntry[] = [
+  // Exemplo: Losartana tomada hoje às 08:05 (atrasado)
+  { id: 1, medicationId: 1, date: new Date().toISOString().split('T')[0], scheduledTime: '08:00', status: 'taken', takenAt: new Date(new Date().setHours(8, 5, 0, 0)).toISOString() },
+];
 
-interface AppData {
-  profiles: Profile[];
-  medications: MedicationType[];
-  history: HistoryEntry[];
-}
+// =========================================================================
+// HOOK PRINCIPAL DA STORE
+// =========================================================================
+export const useMedicationStore = () => {
+  const [medications, setMedications] = useState<Medication[]>(() => JSON.parse(localStorage.getItem('medications') || JSON.stringify(initialMedications)));
+  const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem('history') || JSON.stringify(initialHistory)));
+  const [profiles, setProfiles] = useState<Profile[]>(() => JSON.parse(localStorage.getItem('profiles') || JSON.stringify(initialProfiles)));
+  const [currentProfileId, setCurrentProfileIdState] = useState<number | null>(() => JSON.parse(localStorage.getItem('currentProfileId') || 'null'));
 
+  // Efeitos para persistir os dados no localStorage
+  useEffect(() => { localStorage.setItem('medications', JSON.stringify(medications)); }, [medications]);
+  useEffect(() => { localStorage.setItem('history', JSON.stringify(history)); }, [history]);
+  useEffect(() => { localStorage.setItem('profiles', JSON.stringify(profiles)); }, [profiles]);
+  useEffect(() => { localStorage.setItem('currentProfileId', JSON.stringify(currentProfileId)); }, [currentProfileId]);
 
+  const setCurrentProfileId = (id: number | null) => {
+    setCurrentProfileIdState(id);
+  };
 
-export const useStore = () => {
-  const [data, setData] = useState<AppData>(medicationStore.load());
-  const [isLoaded, setIsLoaded] = useState(false);
+  const addMedication = (med: Omit<Medication, 'id' | 'history' | 'profileId'>) => {
+    if (currentProfileId === null) return;
+    setMedications(prev => [...prev, { ...med, id: Date.now(), history: [], profileId: currentProfileId }]);
+  };
 
-  useEffect(() => {
-    if (!isLoaded) {
-      setData(medicationStore.load());
-      setIsLoaded(true);
-    }
-  }, [isLoaded]);
+  const updateMedication = (med: Medication) => {
+    setMedications(prev => prev.map(m => m.id === med.id ? med : m));
+  };
 
-  useEffect(() => {
-    if (isLoaded) {
-      medicationStore.save(data);
-    }
-  }, [data, isLoaded]);
+  const removeMedication = (id: number) => {
+    setMedications(prev => prev.filter(m => m.id !== id));
+    // Opcional: remover histórico associado
+    setHistory(prev => prev.filter(h => h.medicationId !== id));
+  };
 
-  const addMedication = useCallback((med: Omit<MedicationType, 'id'>) => {
-    const newMed = new Medication(med);
-    setData(prev => medicationStore.addMedication(prev, newMed));
-  }, []);
-
-  const updateMedication = useCallback((updatedMed: MedicationType) => {
-    setData(prev => medicationStore.updateMedication(prev, updatedMed));
-  }, []);
+  const addHistoryEntry = (medicationId: number, scheduledTime: string, status: HistoryEntry['status']) => {
+    const now = new Date();
+    const newEntry: HistoryEntry = {
+      id: Date.now(),
+      medicationId,
+      date: now.toISOString().split('T')[0],
+      scheduledTime, // O horário que estava agendado
+      status,
+      takenAt: now.toISOString(), // A hora exata que a ação ocorreu
+    };
+    setHistory(prev => [...prev, newEntry]);
+  };
   
-  const deleteMedication = useCallback((id: string) => {
-    setData(prev => medicationStore.deleteMedication(prev, id));
-  }, []);
+  const addProfile = (profile: Omit<Profile, 'id'>) => {
+    const newProfile = { ...profile, id: Date.now() };
+    setProfiles(prev => [...prev, newProfile]);
+    return newProfile;
+  };
 
-  const recordDosage = useCallback((entry: Omit<HistoryEntry, 'id'>) => {
-    const newEntry = { ...entry, id: `hist-${Date.now()}` };
-    setData(prev => ({...prev, history: [newEntry, ...prev.history]}));
-  }, []);
+  const removeProfile = (id: number) => {
+    setProfiles(prev => prev.filter(p => p.id !== id));
+    // Remove medicamentos e histórico associados ao perfil
+    const medsToRemove = medications.filter(m => m.profileId === id).map(m => m.id);
+    setMedications(prev => prev.filter(m => m.profileId !== id));
+    setHistory(prev => prev.filter(h => !medsToRemove.includes(h.medicationId)));
+    if (currentProfileId === id) {
+      setCurrentProfileId(null);
+    }
+  };
 
-  const addProfile = useCallback((profile: Omit<Profile, 'id'>) => {
-    const newProfile = { ...profile, id: `user-${Date.now()}` };
-    setData(prev => ({ ...prev, profiles: [...prev.profiles, newProfile] }));
-  }, []);
-
-  const deleteProfile = useCallback((profileId: string) => {
-    setData(prev => medicationStore.deleteProfile(prev, profileId));
-  }, []);
-
-  return { ...data, addMedication, updateMedication, deleteMedication, recordDosage, addProfile, deleteProfile };
+  return { medications, addMedication, updateMedication, removeMedication, history, addHistoryEntry, profiles, addProfile, removeProfile, currentProfileId, setCurrentProfileId };
 };

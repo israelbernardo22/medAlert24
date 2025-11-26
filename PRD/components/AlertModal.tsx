@@ -51,7 +51,7 @@ const AlertModal: React.FC<AlertModalProps> = ({ medication, doseTime, onTake, o
             onClick={onSnooze}
             className="w-full inline-flex justify-center rounded-lg border border-transparent bg-yellow-400 px-4 py-3 text-base font-medium text-yellow-900 shadow-sm hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
           >
-            Adiar
+            Adiar (5 minutos)
           </button>
         </div>
         <p className="mt-4 text-xs text-slate-400">Toque em "Tomar Agora" para confirmar a dose</p>
