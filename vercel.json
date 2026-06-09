@@ -1,3 +1,5 @@
 {
-  "rootDirectory": "PRD"
+  "installCommand": "cd PRD && npm install",
+  "buildCommand": "cd PRD && npm run build",
+  "outputDirectory": "PRD/dist"
 }
