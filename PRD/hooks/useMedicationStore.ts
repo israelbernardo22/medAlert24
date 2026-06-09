@@ -1,109 +1,96 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Medication, HistoryEntry, Profile } from '../types';
+import * as api from '../src/services/apiService';
 
-// =========================================================================
-// DADOS INICIAIS MOCK (PARA DESENVOLVIMENTO)
-// =========================================================================
-const initialProfiles: Profile[] = [
-  { id: 1, name: 'Vovó Ana', relation: 'Avó' },
-  { id: 2, name: 'João', relation: 'Titular' },
-];
-
-const initialMedications: Medication[] = [
-  { 
-    id: 1, 
-    profileId: 1,
-    name: 'Losartana', 
-    dosage: '50mg', 
-    schedule: { type: 'every_day', times: ['08:00', '20:00'] },
-    duration: { type: 'continuous', value: 0 },
-    startDate: '2024-01-01',
-    notes: 'Tomar com um copo de água.', 
-    history: [],
-    doses: ['08:00', '20:00'], // Manter por compatibilidade temporária
-  },
-  { 
-    id: 2, 
-    profileId: 1,
-    name: 'Paracetamol', 
-    dosage: '750mg', 
-    schedule: { type: 'specific_days', days: ['monday', 'wednesday', 'friday'], times: ['10:00'] },
-    duration: { type: 'days', value: 10 },
-    startDate: '2024-05-20',
-    notes: 'Apenas se sentir dor.', 
-    history: [],
-    doses: ['10:00'], // Manter por compatibilidade temporária
-  },
-];
-
-const initialHistory: HistoryEntry[] = [
-  // Exemplo: Losartana tomada hoje às 08:05 (atrasado)
-  { id: 1, medicationId: 1, date: new Date().toISOString().split('T')[0], scheduledTime: '08:00', status: 'taken', takenAt: new Date(new Date().setHours(8, 5, 0, 0)).toISOString() },
-];
-
-// =========================================================================
-// HOOK PRINCIPAL DA STORE
-// =========================================================================
 export const useMedicationStore = () => {
-  const [medications, setMedications] = useState<Medication[]>(() => JSON.parse(localStorage.getItem('medications') || JSON.stringify(initialMedications)));
-  const [history, setHistory] = useState<HistoryEntry[]>(() => JSON.parse(localStorage.getItem('history') || JSON.stringify(initialHistory)));
-  const [profiles, setProfiles] = useState<Profile[]>(() => JSON.parse(localStorage.getItem('profiles') || JSON.stringify(initialProfiles)));
-  const [currentProfileId, setCurrentProfileIdState] = useState<number | null>(() => JSON.parse(localStorage.getItem('currentProfileId') || 'null'));
+  const [medications, setMedications] = useState<Medication[]>(() =>
+    JSON.parse(localStorage.getItem('medications') || '[]')
+  );
+  const [history, setHistory] = useState<HistoryEntry[]>(() =>
+    JSON.parse(localStorage.getItem('history') || '[]')
+  );
+  const [profiles, setProfiles] = useState<Profile[]>(() =>
+    JSON.parse(localStorage.getItem('profiles') || '[]')
+  );
+  const [currentProfileId, setCurrentProfileIdState] = useState<number | null>(() =>
+    JSON.parse(localStorage.getItem('currentProfileId') || 'null')
+  );
 
-  // Efeitos para persistir os dados no localStorage
   useEffect(() => { localStorage.setItem('medications', JSON.stringify(medications)); }, [medications]);
   useEffect(() => { localStorage.setItem('history', JSON.stringify(history)); }, [history]);
   useEffect(() => { localStorage.setItem('profiles', JSON.stringify(profiles)); }, [profiles]);
   useEffect(() => { localStorage.setItem('currentProfileId', JSON.stringify(currentProfileId)); }, [currentProfileId]);
 
-  const setCurrentProfileId = (id: number | null) => {
-    setCurrentProfileIdState(id);
-  };
+  const setCurrentProfileId = (id: number | null) => setCurrentProfileIdState(id);
 
-  const addMedication = (med: Omit<Medication, 'id' | 'history' | 'profileId'>) => {
+  const loadFromApi = useCallback(async () => {
+    const [profs, meds, hist] = await Promise.all([
+      api.fetchProfiles(),
+      api.fetchMedications(),
+      api.fetchHistory(),
+    ]);
+    setProfiles(profs);
+    setMedications(meds);
+    setHistory(hist);
+  }, []);
+
+  const addMedication = async (med: Omit<Medication, 'id' | 'history' | 'profileId'>) => {
     if (currentProfileId === null) return;
-    setMedications(prev => [...prev, { ...med, id: Date.now(), history: [], profileId: currentProfileId }]);
+    const saved = await api.createMedication({ ...med, profileId: currentProfileId });
+    setMedications(prev => [...prev, { ...saved, history: [] }]);
   };
 
-  const updateMedication = (med: Medication) => {
+  const updateMedication = async (med: Medication) => {
     setMedications(prev => prev.map(m => m.id === med.id ? med : m));
+    api.updateMedicationApi(med.id, med).catch(console.error);
   };
 
-  const removeMedication = (id: number) => {
+  const removeMedication = async (id: number) => {
     setMedications(prev => prev.filter(m => m.id !== id));
-    // Opcional: remover histórico associado
     setHistory(prev => prev.filter(h => h.medicationId !== id));
+    api.deleteMedicationApi(id).catch(console.error);
   };
 
-  const addHistoryEntry = (medicationId: number, scheduledTime: string, status: HistoryEntry['status']) => {
+  const addHistoryEntry = async (medicationId: number, scheduledTime: string, status: HistoryEntry['status']) => {
     const now = new Date();
     const newEntry: HistoryEntry = {
       id: Date.now(),
       medicationId,
       date: now.toISOString().split('T')[0],
-      scheduledTime, // O horário que estava agendado
+      scheduledTime,
       status,
-      takenAt: now.toISOString(), // A hora exata que a ação ocorreu
+      takenAt: now.toISOString(),
     };
     setHistory(prev => [...prev, newEntry]);
-  };
-  
-  const addProfile = (profile: Omit<Profile, 'id'>) => {
-    const newProfile = { ...profile, id: Date.now() };
-    setProfiles(prev => [...prev, newProfile]);
-    return newProfile;
+    api.createHistoryEntry({
+      medicationId,
+      date: newEntry.date,
+      scheduledTime,
+      status,
+      takenAt: newEntry.takenAt,
+    }).catch(console.error);
   };
 
-  const removeProfile = (id: number) => {
+  const addProfile = async (profile: Omit<Profile, 'id'>): Promise<Profile> => {
+    const saved = await api.createProfile(profile);
+    setProfiles(prev => [...prev, saved]);
+    return saved;
+  };
+
+  const removeProfile = async (id: number) => {
     setProfiles(prev => prev.filter(p => p.id !== id));
-    // Remove medicamentos e histórico associados ao perfil
     const medsToRemove = medications.filter(m => m.profileId === id).map(m => m.id);
     setMedications(prev => prev.filter(m => m.profileId !== id));
     setHistory(prev => prev.filter(h => !medsToRemove.includes(h.medicationId)));
-    if (currentProfileId === id) {
-      setCurrentProfileId(null);
-    }
+    if (currentProfileId === id) setCurrentProfileId(null);
+    api.deleteProfileApi(id).catch(console.error);
   };
 
-  return { medications, addMedication, updateMedication, removeMedication, history, addHistoryEntry, profiles, addProfile, removeProfile, currentProfileId, setCurrentProfileId };
+  return {
+    medications, addMedication, updateMedication, removeMedication,
+    history, addHistoryEntry,
+    profiles, addProfile, removeProfile,
+    currentProfileId, setCurrentProfileId,
+    loadFromApi,
+  };
 };
